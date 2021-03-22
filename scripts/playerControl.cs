@@ -5,19 +5,24 @@ using UnityEngine;
 public class playerControl : MonoBehaviour
 {
 
-    public Rigidbody2D rigidBody;
+    private Rigidbody2D rigidBody;
     public float speed = 10f;
     public float jumpForce = 10f;
     public LayerMask ground;
-    public Animator animator;
-    public Collider2D collider;
+    private Animator animator;
+    private Collider2D coll;
 
     bool jump=false;
+
+    public int cherry;
+    public int gem;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        rigidBody = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
+        coll = GetComponent<Collider2D>();
     }
 
     void Update(){
@@ -57,6 +62,7 @@ public class playerControl : MonoBehaviour
         }
         
     }
+
     void SwitchAnim(){
         animator.SetBool("idle",false);
         if(animator.GetBool("jumping") ){
@@ -64,9 +70,22 @@ public class playerControl : MonoBehaviour
                 animator.SetBool("jumping",false);
                 animator.SetBool("falling",true);
             }
-        }else if(collider.IsTouchingLayers(ground)){
+        }else if(coll.IsTouchingLayers(ground)){
             animator.SetBool("falling",false);
             animator.SetBool("idle",true);
         }
     }
+
+    private void OnTriggerEnter2D(Collider2D coll){
+        if (coll.tag == "Cherry")
+        {
+            Destroy(coll.gameObject);
+            cherry += 1;
+        }else if (coll.tag == "Gem")
+        {
+            Destroy(coll.gameObject);
+            gem += 1;
+        }
+    }
+
 }
