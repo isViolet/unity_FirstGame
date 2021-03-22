@@ -1,18 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class playerControl : MonoBehaviour
 {
 
-    private Rigidbody2D rigidBody;
+    public Rigidbody2D rigidBody;
     public float speed = 10f;
-    public float jumpForce = 10f;
+    public float jumpForce = 500f;
     public LayerMask ground;
-    private Animator animator;
-    private Collider2D coll;
+    public Animator animator;
+    public Collider2D coll;
+
+    public Text tx_cherry;
+    public Text tx_gem;
 
     bool jump=false;
+    private bool isHurt = false;
 
     public int cherry;
     public int gem;
@@ -20,21 +25,23 @@ public class playerControl : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        rigidBody = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        coll = GetComponent<Collider2D>();
+        
     }
 
     void Update(){
-        if(Input.GetButtonDown("Jump")){
-            jump=true;
+        if(Input.GetButtonDown("Jump")　&&　coll.IsTouchingLayers(ground)){
+            jump = true;
         }
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        Movement();
+        if (!isHurt)
+        {
+            Movement();
+        }
+        
         SwitchAnim();
     }
 
@@ -52,11 +59,14 @@ public class playerControl : MonoBehaviour
         if (hsraw != 0)
         {
             transform.localScale = new Vector3(hsraw, 1, 1);
-            
         }
+        // if(Input.GetButtonDown("Jump")　&&　coll.IsTouchingLayers(ground)){
+        //     rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpForce * Time.deltaTime);
+        //     animator.SetBool("jumping",true);
+        // }
+        
         if(jump){
             jump=false;
-
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpForce * Time.deltaTime);
             animator.SetBool("jumping",true);
         }
@@ -70,6 +80,16 @@ public class playerControl : MonoBehaviour
                 animator.SetBool("jumping",false);
                 animator.SetBool("falling",true);
             }
+        }else if (isHurt)
+        {
+            animator.SetBool("hurt",true);
+            animator.SetFloat("running",0.0f);
+            if (Mathf.Abs(rigidBody.velocity.x) < 0.1f)
+            {
+                animator.SetBool("hurt",false);
+                animator.SetBool("idle",true);
+                isHurt = false;
+            }
         }else if(coll.IsTouchingLayers(ground)){
             animator.SetBool("falling",false);
             animator.SetBool("idle",true);
@@ -81,10 +101,32 @@ public class playerControl : MonoBehaviour
         {
             Destroy(coll.gameObject);
             cherry += 1;
+            tx_cherry.text = cherry.ToString();
         }else if (coll.tag == "Gem")
         {
             Destroy(coll.gameObject);
             gem += 1;
+            tx_gem.text = gem.ToString();
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D coll){
+        if (coll.gameObject.tag == "Enemies")
+        {
+            if (animator.GetBool("falling"))
+            {
+                Destroy(coll.gameObject);
+                rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpForce * Time.deltaTime);
+                animator.SetBool("jumping",true);
+            }else if (transform.position.x < coll.gameObject.transform.position.x)
+            {
+                rigidBody.velocity = new Vector2(-10f, rigidBody.velocity.y);
+                isHurt = true;
+            }else if (transform.position.x > coll.gameObject.transform.position.x)
+            {
+                rigidBody.velocity = new Vector2(10f, rigidBody.velocity.y);
+                isHurt = true;
+            }
         }
     }
 
