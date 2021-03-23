@@ -12,6 +12,7 @@ public class playerControl : MonoBehaviour
     public LayerMask ground;
     public Animator animator;
     public Collider2D coll;
+    public Collider2D disColl;
 
     public Text tx_cherry;
     public Text tx_gem;
@@ -21,6 +22,13 @@ public class playerControl : MonoBehaviour
 
     public int cherry;
     public int gem;
+
+    public Transform CellingCheck;
+
+    public AudioSource jumpAudio;
+    public AudioSource hurtAudio;
+    public AudioSource cherryAudio;
+    public AudioSource gemAudio;
 
     // Start is called before the first frame update
     void Start()
@@ -67,14 +75,19 @@ public class playerControl : MonoBehaviour
         
         if(jump){
             jump=false;
+            jumpAudio.Play();
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpForce * Time.deltaTime);
             animator.SetBool("jumping",true);
         }
+        Crouch();
         
     }
 
     void SwitchAnim(){
         animator.SetBool("idle",false);
+        if(rigidBody.velocity.y < 0.1f && !coll.IsTouchingLayers(ground)){
+            animator.SetBool("falling",true);
+        }
         if(animator.GetBool("jumping") ){
             if(rigidBody.velocity.y < 0){
                 animator.SetBool("jumping",false);
@@ -82,6 +95,7 @@ public class playerControl : MonoBehaviour
             }
         }else if (isHurt)
         {
+            hurtAudio.Play();
             animator.SetBool("hurt",true);
             animator.SetFloat("running",0.0f);
             if (Mathf.Abs(rigidBody.velocity.x) < 0.1f)
@@ -94,16 +108,19 @@ public class playerControl : MonoBehaviour
             animator.SetBool("falling",false);
             animator.SetBool("idle",true);
         }
+        
     }
 
     private void OnTriggerEnter2D(Collider2D coll){
         if (coll.tag == "Cherry")
         {
+            cherryAudio.Play();
             Destroy(coll.gameObject);
             cherry += 1;
             tx_cherry.text = cherry.ToString();
         }else if (coll.tag == "Gem")
         {
+            gemAudio.Play();
             Destroy(coll.gameObject);
             gem += 1;
             tx_gem.text = gem.ToString();
@@ -113,9 +130,11 @@ public class playerControl : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D coll){
         if (coll.gameObject.tag == "Enemies")
         {
+            Enemy em = coll.gameObject.GetComponent<Enemy>();
             if (animator.GetBool("falling"))
             {
-                Destroy(coll.gameObject);
+                em.destroy();
+                // Destroy(coll.gameObject);
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpForce * Time.deltaTime);
                 animator.SetBool("jumping",true);
             }else if (transform.position.x < coll.gameObject.transform.position.x)
@@ -126,6 +145,19 @@ public class playerControl : MonoBehaviour
             {
                 rigidBody.velocity = new Vector2(10f, rigidBody.velocity.y);
                 isHurt = true;
+            }
+        }
+    }
+
+    void Crouch(){
+        if (!Physics2D.OverlapCircle(CellingCheck.position, 0.2f, ground))
+        {
+            if(Input.GetButtonDown("Crouch")){
+                disColl.enabled = false;
+                animator.SetBool("crouch", true);
+            }else if (Input.GetButtonUp("Crouch")){
+                animator.SetBool("crouch", false);
+                disColl.enabled = true;
             }
         }
     }
