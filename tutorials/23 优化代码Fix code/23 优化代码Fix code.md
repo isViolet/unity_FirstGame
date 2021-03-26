@@ -1,0 +1,3 @@
+- 删除playe脚本里的所有关于idle的语句，animator里也删去idle，因为idle时默认的
+- 使用rigidbody时给他施加力可以放在fixedupdate里，这样可以避免卡顿的出现，因为fixed比update同一时间执行更多次
+
